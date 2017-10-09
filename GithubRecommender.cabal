@@ -15,7 +15,8 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Lib
+  exposed-modules:     DataLoader.GithubArchive
+                     , DataLoader.GithubAPI
   build-depends:       base >= 4.7 && < 5
                      , text >= 1.2
                      , aeson >= 1.1
