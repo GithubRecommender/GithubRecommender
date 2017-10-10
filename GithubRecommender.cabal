@@ -16,7 +16,12 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     DataLoader.GithubArchive
-                     , DataLoader.GithubAPI
+                     , DataLoader.GithubAPI.TokenAuthentication
+                     , DataLoader.GithubAPI.Client
+                     , DataLoader.Services.Types
+                     , DataLoader.Services.RepositoryEvents
+                     , DataLoader.Services.RepositoryData
+
   build-depends:       aeson >= 1.1
                      , base >= 4.7 && < 5
                      , bytestring >= 0.10
@@ -24,6 +29,7 @@ library
                      , unordered-containers >= 0.2
                      , http-client >= 0.5.7.0
                      , http-client-tls >= 0.3
+                     , network-uri >= 2.6
                      , mtl >= 2.2
                      , servant
                      , servant-client

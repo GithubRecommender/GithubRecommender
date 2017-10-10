@@ -16,7 +16,7 @@ import Servant.API.Experimental.Auth (AuthProtect)
 import Servant.Client
 import Servant.Common.Req (Req, addHeader)
 
-newtype BearerToken = BearerToken { unToken :: String }
+newtype BearerToken = BearerToken { unToken :: String } deriving (Eq, Show)
 
 headerValue :: BearerToken -> String
 headerValue = ("bearer "  ++) . unToken
