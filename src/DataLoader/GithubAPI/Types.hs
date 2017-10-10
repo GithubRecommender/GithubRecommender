@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DeriveGeneric #-}
 
-module DataLoader.GithubAPI where
+module DataLoader.GithubAPI.Types where
 
 import Data.Aeson
 import Data.Proxy
@@ -19,16 +19,17 @@ import Servant.API.Experimental.Auth (AuthProtect)
 import Servant.API hiding (addHeader)
 import Servant.Client
 import Servant.Common.Req (Req, addHeader)
-import DataLoader.GithubAPI.TokenAuthentication
 
-githubURL :: String
-githubURL = "https://api.github.com"
+-- | Authentication via bearer token
+newtype BearerToken = BearerToken { unToken :: String }
 
-testToken :: BearerToken
-testToken = BearerToken "db77c2fbdfc5ce4a8fb8a8f2499854fc04cafa23"
+type instance AuthClientData (AuthProtect "token-auth") = BearerToken
+
+authenticateWithBearerToken :: BearerToken -> Req -> Req
+authenticateWithBearerToken token req = addHeader "Authorization" ("bearer " ++ (unToken token)) req
 
 -- | API client
-type GithubAPI       = "graphql" :> (Header "User-Agent" String) :> BearerTokenProtected :> ReqBody '[JSON] GraphQLRequest :> Post '[JSON] GraphQLResponse
+type GithubAPI       = "graphql" :> (Header "User-Agent" String) :> (AuthProtect "token-auth") :> ReqBody '[JSON] GraphQLRequest :> Post '[JSON] GraphQLResponse
 data GraphQLRequest  = GraphQLRequest  { _query :: Text, _variables :: Maybe Object } deriving (Eq, Show, Generic)
 data GraphQLResponse = GraphQLResponse { _data :: Maybe Object, _errors :: (Maybe [Object])  } deriving (Eq, Show, Generic)
 
