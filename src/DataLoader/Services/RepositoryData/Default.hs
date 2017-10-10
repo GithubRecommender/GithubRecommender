@@ -7,17 +7,14 @@ module DataLoader.Services.RepositoryData.Default where
 import DataLoader.GithubAPI.TokenAuthentication
 import DataLoader.GithubAPI.Client
 import DataLoader.Services.Types
-import DataLoader.Services.RepositoryData
+import DataLoader.Services.RepositoryData (RepositoryData(RepositoryData),
+                                           RepositoryLanguage(RepositoryLanguage),
+                                           RepositoryTopic(RepositoryTopic))
 import Data.Aeson
 import Data.Text (Text)
+import Data.Maybe (maybeToList)
 import GHC.Generics
 import Text.Heredoc
-
--- data RepoDataService = RepoDataService { token :: BearerToken }
-
--- instance RepositoryDataService RepoDataService where
---   fetchSingle   = fetchSingleFromApi
---   fetchMultiple = fetchMultipleFromApi
 
 dataQuery :: Text
 dataQuery = [str|
@@ -28,8 +25,8 @@ dataQuery = [str|
                 |
                 |query RepositoryInfo($name: String!, $owner: String!) {
                 |  repository(name: $name, owner: $owner) {
-                |    id
-                |    name
+                |    repoId: id
+                |    repoName: name
                 |    isFork
                 |    isPrivate
                 |    isMirror
@@ -58,8 +55,8 @@ dataQuery = [str|
                 |]
 
 data ViewRepositoryData = ViewRepositoryData {
-      id         :: String
-    , name       :: Text
+      repoId     :: String
+    , repoName   :: Text
     , isFork     :: Bool
     , isPrivate  :: Bool
     , isMirror   :: Bool
@@ -100,10 +97,35 @@ instance FromJSON ViewRepositoryTopic
 instance FromJSON ViewRepositoryLanguage
 instance FromJSON ViewRepositoryNode
 
-fetchData :: BearerToken -> Text -> Text -> ClientResponse ViewRepositoryNode
-fetchData token repoName repoOwner = do
-  runRequest token query
-  -- viewData <$> response
+fetchData :: BearerToken -> Text -> Text -> IO (Either ServiceError RepositoryData)
+fetchData token repoName' repoOwner = mapError <$> fetch
   where
     query     = GraphQLRequest dataQuery (Just variables) Nothing
-    variables = object [ "name" .= repoName, "owner" .= repoOwner ]
+    variables = object [ "name" .= repoName', "owner" .= repoOwner ]
+    fetch :: ClientResponse ViewRepositoryNode
+    fetch     = runRequest token query
+    mapError (Left _)                                      = Left ServiceError
+    mapError (Right (GraphQLResponse (Just view) Nothing)) = Right (viewData view)
+    mapError (Right  x)                                    = Left (WithMessage (show x))
+
+viewData :: ViewRepositoryNode -> RepositoryData
+viewData view = RepositoryData
+                (Id . repoId $ repoData)
+                (repoName repoData)
+                (isFork repoData)
+                (isPrivate repoData)
+                (isMirror repoData)
+                (isArchived repoData)
+                (isLocked repoData)
+                languages'
+                topics'
+  where
+    repoData   = repository view
+    languages' =  map languageData (nodes . languages $ repoData)
+    languageData (ViewRepositoryLanguage i n) = RepositoryLanguage (Id i) n
+    topics'' :: [ViewRepositoryTopicNode]
+    topics''   = nodes . topics $ repoData
+    topics'    = map (topicData . topic) topics''
+    topicData (ViewRepositoryTopic i n r) = RepositoryTopic (Id i) n (related' r)
+    related' (Just rel) = map topicData rel
+    related' Nothing    = []

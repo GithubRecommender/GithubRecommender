@@ -12,7 +12,8 @@ instance FromJSON Id
 
 data RepositoryReference = RepositoryReference Id
 
-data ServiceError        = ServiceError deriving (Eq, Show)
+data ServiceError = ServiceError
+                  | WithMessage String deriving (Eq, Show)
 instance Exception ServiceError
 
 class Identifyable a where
