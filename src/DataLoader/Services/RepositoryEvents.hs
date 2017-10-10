@@ -19,4 +19,4 @@ instance Named RepositoryEvent where name = repoName
 
 class RepositoryEventService s where
   fetchSingle :: s -> Either ServiceError RepositoryEvent
-  fetchBatch  :: (Traversable t) => s -> BatchSize -> Either ServiceError (t RepositoryEvent)
+  fetchBatch  :: (Traversable t, Monad m) => s -> BatchSize -> m (Either ServiceError (t RepositoryEvent))

@@ -21,6 +21,7 @@ library
                      , DataLoader.Services.Types
                      , DataLoader.Services.RepositoryEvents
                      , DataLoader.Services.RepositoryData
+                     , DataLoader.Services.RepositoryData.Default
                      , TestApplication
 
   build-depends:       aeson >= 1.1
@@ -35,6 +36,7 @@ library
                      , servant
                      , servant-client
                      , text >= 1.2
+                     , heredoc
                      , transformers >= 0.5
                      , transformers-compat >= 0.5
 

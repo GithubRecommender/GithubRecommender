@@ -8,6 +8,7 @@ module DataLoader.GithubAPI.Client
   (
      GraphQLRequest(..)
    , GraphQLResponse(..)
+   , ClientResponse
    , runRequest
   )
 where
@@ -36,7 +37,7 @@ type WithUserAgent = (Header "User-Agent" String)
 
 data GraphQLRequest = GraphQLRequest  {
     _query     :: Text
-  , _variables :: Maybe Object
+  , _variables :: Maybe Value
   , _operation :: Maybe Text
   } deriving (Eq, Show, Generic)
 
@@ -48,23 +49,30 @@ instance ToJSON GraphQLRequest where
     , "operationName" .= _operation request
     ]
 
-data GraphQLResponse = GraphQLResponse {
-  _data   :: Maybe Object,
-  _errors :: Maybe [Object]
+data GraphQLResponse result = GraphQLResponse {
+  _data   :: Maybe result,
+  _errors :: Maybe Value
   } deriving (Eq, Show, Generic)
 
-instance FromJSON GraphQLResponse where
+instance (FromJSON result) => FromJSON (GraphQLResponse result) where
   parseJSON (Object response) = GraphQLResponse
                                 <$> response .:? "data"
                                 <*> response .:? "errors"
 
-type GithubAPIV4 = "graphql" :> WithUserAgent :> BearerTokenProtected :> ReqBody '[JSON] GraphQLRequest :> Post '[JSON] GraphQLResponse
+type GithubAPIV4 a = "graphql" :> WithUserAgent :> BearerTokenProtected :> ReqBody '[JSON] GraphQLRequest :> Post '[JSON] (GraphQLResponse a)
 
-runRequest :: BearerToken -> GraphQLRequest -> IO (Either ServantError GraphQLResponse)
+data ClientError = FatalError ServantError deriving (Eq, Show)
+instance Exception ClientError
+
+type ClientResponse a = IO (Either ClientError (GraphQLResponse a))
+
+runRequest :: (FromJSON result) => BearerToken -> GraphQLRequest -> ClientResponse result
 runRequest token graphqlRequest = do
   manager <- newManager tlsManagerSettings
-  runClientM request (ClientEnv manager baseUrl)
+  mapError <$> runClientM request (ClientEnv manager baseUrl)
   where
-    request      = query (Just defaultUserAgent) authenticate graphqlRequest
-    authenticate = mkAuthenticateReq token authenticateWithBearerToken
-    query        = client (Proxy :: Proxy GithubAPIV4)
+    request            = query (Just defaultUserAgent) authenticate graphqlRequest
+    authenticate       = mkAuthenticateReq token authenticateWithBearerToken
+    query              = client (Proxy :: Proxy (GithubAPIV4 result))
+    mapError (Left e)  = Left (FatalError e)
+    mapError (Right r) = Right r

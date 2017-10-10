@@ -6,7 +6,7 @@ import Control.Exception
 import Data.Text (Text)
 import DataLoader.Services.Types
 
-data RepositoryData = RepositoryData {
+data RepositoryData = EmptyData | RepositoryData {
      repoId     :: Id
    , repoName   :: Text
    , isFork     :: Bool
@@ -39,5 +39,5 @@ instance Identifyable RepositoryTopic where id = topicId
 instance Named RepositoryTopic where name = topicName
 
 class RepositoryDataService s where
-  fetchSingle   :: s -> RepositoryReference -> Either ServiceError RepositoryData
-  fetchMultiple :: (Traversable t) => s -> t RepositoryReference -> Either ServiceError (t RepositoryData)
+  fetchSingle   :: s -> RepositoryReference -> IO (Either ServiceError RepositoryData)
+  fetchMultiple :: (Traversable t) => s -> t RepositoryReference -> IO (Either ServiceError (t RepositoryData))
