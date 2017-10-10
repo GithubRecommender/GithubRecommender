@@ -21,6 +21,7 @@ library
                      , DataLoader.Services.Types
                      , DataLoader.Services.RepositoryEvents
                      , DataLoader.Services.RepositoryData
+                     , TestApplication
 
   build-depends:       aeson >= 1.1
                      , base >= 4.7 && < 5
