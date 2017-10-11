@@ -56,15 +56,16 @@ dataQuery = [str|
                 |}
                 |]
 
-mkRequest :: Text -> Text -> GraphQLRequest
-mkRequest repoName repoOwner = GraphQLRequest dataQuery (Just variables) Nothing
-  where
-    variables = object ["name" .= repoName, "owner" .= repoOwner]
-
 fetchData token repoName repoOwner = extractData <$> runQuery
   where
     runQuery :: ClientResponse Value
     runQuery = runRequest token (mkRequest repoName repoOwner)
+
+
+mkRequest :: Text -> Text -> GraphQLRequest
+mkRequest repoName repoOwner = GraphQLRequest dataQuery (Just variables) Nothing
+  where
+    variables = object ["name" .= repoName, "owner" .= repoOwner]
 
 mkId :: Text -> Id
 mkId = Id . unpack

@@ -25,6 +25,7 @@ import Network.HTTP.Client (newManager, defaultManagerSettings)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Servant.API hiding (addHeader)
 import Servant.Client
+import Data.ByteString (ByteString)
 
 import DataLoader.GithubAPI.TokenAuthentication
 
@@ -63,12 +64,12 @@ instance (FromJSON result) => FromJSON (GraphQLResponse result) where
 
 type GithubAPIV4 a = "graphql" :> WithUserAgent :> BearerTokenProtected :> ReqBody '[JSON] GraphQLRequest :> Post '[JSON] (GraphQLResponse a)
 
-data ClientError a    = FatalError ServantError -- ^ No response at all
-                      | ServerError Value       -- ^ Errors
-                      | MalformedResponse
-                      | PartialError Value a    -- ^ Parts of the response are not available due to resolution errors
-                      deriving (Eq, Show)
 
+data ClientError a = FatalError ServantError -- ^ No response at all
+                   | ServerError Value       -- ^ Errors
+                   | MalformedResponse
+                   | PartialError Value a    -- ^ Parts of the response are not available due to resolution errors
+                   deriving (Eq, Show)
 
 type ClientResponse a = IO (Either (ClientError a) a)
 

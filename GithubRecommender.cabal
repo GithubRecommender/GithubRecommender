@@ -22,6 +22,7 @@ library
                      , DataLoader.Services.RepositoryEvents
                      , DataLoader.Services.RepositoryData
                      , DataLoader.Services.RepositoryData.Default
+                     , DataLoader.Worker
                      , TestApplication
 
   build-depends:       aeson >= 1.1
@@ -29,6 +30,7 @@ library
                      , lens
                      , base >= 4.7 && < 5
                      , bytestring >= 0.10
+                     , download
                      , persistent-sqlite
                      , persistent
                      , esqueleto
@@ -37,15 +39,22 @@ library
                      , unordered-containers >= 0.2
                      , http-client >= 0.5.7.0
                      , http-client-tls >= 0.3
+                     , http-media >= 0.6
                      , network-uri >= 2.6
                      , mtl >= 2.2
                      , servant
                      , servant-client
                      , text >= 1.2
+                     , time >= 1.6
                      , heredoc
                      , transformers >= 0.5
                      , transformers-compat >= 0.5
+                     , transient
+                     , stm >= 2.4
+                     , stm-chans >= 3.0
+                     , random >= 1.1
                      , vector
+                     , zlib >= 0.6
 
   default-language:    Haskell2010
 

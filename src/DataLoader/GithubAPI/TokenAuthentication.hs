@@ -24,7 +24,6 @@ headerValue = ("bearer "  ++) . unToken
 headerKey :: String
 headerKey = "Authorization"
 
-
 type BearerTokenProtected = AuthProtect "bearer-token-auth"
 
 type instance AuthClientData BearerTokenProtected = BearerToken
