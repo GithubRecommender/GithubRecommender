@@ -9,6 +9,7 @@ module DataLoader.GithubAPI.Client
      GraphQLRequest(..)
    , GraphQLResponse(..)
    , ClientResponse
+   , ClientError(..)
    , runRequest
   )
 where
@@ -58,6 +59,7 @@ instance (FromJSON result) => FromJSON (GraphQLResponse result) where
   parseJSON (Object response) = GraphQLResponse
                                 <$> response .:? "data"
                                 <*> response .:? "errors"
+  parseJSON _                 = mempty
 
 type GithubAPIV4 a = "graphql" :> WithUserAgent :> BearerTokenProtected :> ReqBody '[JSON] GraphQLRequest :> Post '[JSON] (GraphQLResponse a)
 
@@ -75,9 +77,9 @@ runRequest token graphqlRequest = do
   manager <- newManager tlsManagerSettings
   extractResponse <$> runClientM request (ClientEnv manager baseUrl)
   where
-    request            = query (Just defaultUserAgent) authenticate graphqlRequest
-    authenticate       = mkAuthenticateReq token authenticateWithBearerToken
-    query              = client (Proxy :: Proxy (GithubAPIV4 result))
+    request      = query (Just defaultUserAgent) authenticate graphqlRequest
+    authenticate = mkAuthenticateReq token authenticateWithBearerToken
+    query        = client (Proxy :: Proxy (GithubAPIV4 result))
 
 extractResponse :: (FromJSON result) => Either ServantError (GraphQLResponse result) -> Either (ClientError result) result
 extractResponse (Right (GraphQLResponse (Just data') Nothing))  = Right data'

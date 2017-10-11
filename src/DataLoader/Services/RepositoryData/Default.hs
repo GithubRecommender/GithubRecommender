@@ -3,6 +3,14 @@
 {-# LANGUAGE DeriveGeneric #-}
 
 module DataLoader.Services.RepositoryData.Default where
+import Control.Lens hiding ((.=))
+import Data.Aeson
+import Data.Aeson.Lens
+import Data.Vector (Vector, toList)
+import Data.Text (Text, unpack)
+import Data.Maybe (maybeToList, fromMaybe)
+import GHC.Generics
+import Text.Heredoc
 
 import DataLoader.GithubAPI.TokenAuthentication
 import DataLoader.GithubAPI.Client
@@ -10,12 +18,6 @@ import DataLoader.Services.Types
 import DataLoader.Services.RepositoryData (RepositoryData(RepositoryData),
                                            RepositoryLanguage(RepositoryLanguage),
                                            RepositoryTopic(RepositoryTopic))
-import Data.Aeson
-import Data.Text (Text)
-import Data.Maybe (maybeToList)
-import GHC.Generics
-import Text.Heredoc
-
 dataQuery :: Text
 dataQuery = [str|
                 |fragment topicInfo on Topic {
@@ -54,77 +56,55 @@ dataQuery = [str|
                 |}
                 |]
 
-data ViewRepositoryData = ViewRepositoryData {
-      repoId     :: String
-    , repoName   :: Text
-    , isFork     :: Bool
-    , isPrivate  :: Bool
-    , isMirror   :: Bool
-    , isArchived :: Bool
-    , isLocked   :: Bool
-    , languages  :: ViewNodes ViewRepositoryLanguage
-    , topics     :: ViewNodes ViewRepositoryTopicNode
-  } deriving (Eq, Show, Generic)
-
-data ViewRepositoryNode = ViewRepositoryNode {
-   repository :: ViewRepositoryData
- } deriving (Eq, Show, Generic)
-
-data ViewNodes a = ViewNodes {
-  nodes :: [a]
- } deriving (Eq, Show, Generic)
-
-data ViewRepositoryTopicNode = ViewRepositoryTopicNode {
-  topic :: ViewRepositoryTopic
- } deriving (Eq, Show, Generic)
-
-data ViewRepositoryTopic = ViewRepositoryTopic {
-     topicId       :: String
-   , topicName     :: Text
-   , relatedTopics :: Maybe [ViewRepositoryTopic]
- } deriving (Eq, Show, Generic)
-
-
-data ViewRepositoryLanguage = ViewRepositoryLanguage {
-    languageId :: String
-  , languageName :: Text
- } deriving (Eq, Show, Generic)
-
-instance FromJSON ViewRepositoryData
-instance (FromJSON a) => FromJSON (ViewNodes a)
-instance FromJSON ViewRepositoryTopicNode
-instance FromJSON ViewRepositoryTopic
-instance FromJSON ViewRepositoryLanguage
-instance FromJSON ViewRepositoryNode
-
-fetchData :: BearerToken -> Text -> Text -> IO (Either ServiceError RepositoryData)
-fetchData token repoName' repoOwner = mapError <$> fetch
+mkRequest :: Text -> Text -> GraphQLRequest
+mkRequest repoName repoOwner = GraphQLRequest dataQuery (Just variables) Nothing
   where
-    query     = GraphQLRequest dataQuery (Just variables) Nothing
-    variables = object [ "name" .= repoName', "owner" .= repoOwner ]
-    fetch :: ClientResponse ViewRepositoryNode
-    fetch     = runRequest token query
-    mapError (Left _)     = Left ServiceError
-    mapError (Right view) = Right (viewData view)
+    variables = object ["name" .= repoName, "owner" .= repoOwner]
 
-viewData :: ViewRepositoryNode -> RepositoryData
-viewData view = RepositoryData
-                (Id . repoId $ repoData)
-                (repoName repoData)
-                (isFork repoData)
-                (isPrivate repoData)
-                (isMirror repoData)
-                (isArchived repoData)
-                (isLocked repoData)
-                languages'
-                topics'
+fetchData token repoName repoOwner = extractData <$> runQuery
   where
-    repoData   = repository view
-    languages' =  map languageData (nodes . languages $ repoData)
-    languageData (ViewRepositoryLanguage i n) = RepositoryLanguage (Id i) n
-    topics'' :: [ViewRepositoryTopicNode]
-    topics''   = nodes . topics $ repoData
-    topics'    = map (topicData . topic) topics''
-    topicData (ViewRepositoryTopic i n r) = RepositoryTopic (Id i) n (related' r)
-    related' (Just rel) = map topicData rel
-    related' Nothing    = []
+    runQuery :: ClientResponse Value
+    runQuery = runRequest token (mkRequest repoName repoOwner)
+
+mkId :: Text -> Id
+mkId = Id . unpack
+
+extractData :: Either (ClientError Value) Value -> Either ServiceError RepositoryData
+extractData (Left e)      = Left ServiceError
+extractData (Right value) = case result of
+                              Just v  -> Right v
+                              Nothing -> Left ServiceError
+  where
+    repo field tpe = value ^? key "repository" . key field . tpe
+    repoId         = Id . unpack <$> (repo "repoId" _String)
+    result         = RepositoryData            <$>
+                     repoId                    <*>
+                     (repo "repoName" _String) <*>
+                     (repo "isFork" _Bool)     <*>
+                     (repo "isPrivate" _Bool)  <*>
+                     (repo "isMirror" _Bool)   <*>
+                     (repo "isArchived" _Bool) <*>
+                     (repo "isLocked" _Bool)   <*>
+                     languages                 <*>
+                     topics
+    languages = extractLanguages $ toList <$> value ^? key "repository" . key "languages" . key "nodes" . _Array
+    topics    = extractTopics    $ toList <$> value ^? key "repository" . key "topics"    . key "nodes" . _Array
+
+extractLanguages :: Maybe [Value] -> Maybe [RepositoryLanguage]
+extractLanguages v = (v >>= (sequence . map language)) `orElse` (Just [])
+  where
+    language v = RepositoryLanguage <$>
+                 (mkId <$> (v ^? key "languageId"._String)) <*>
+                 v ^? key "languageName"._String
+
+extractTopics :: Maybe [Value] -> Maybe [RepositoryTopic]
+extractTopics v = (v >>= (sequence . map topic)) `orElse` (Just [])
+  where
+    topic v = RepositoryTopic <$>
+              (mkId <$> (v ^? key "topic" . key "topicId"._String)) <*>
+              (v ^? key "topic" . key "topicName"._String)          <*>
+              extractTopics (toList <$> v ^? key "topic" . key "relatedTopics"._Array)
+
+orElse :: Maybe a -> Maybe a -> Maybe a
+orElse Nothing a = a
+orElse v _       = v
