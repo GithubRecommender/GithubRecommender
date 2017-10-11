@@ -1,0 +1,10 @@
+# sbt
+project/project
+project/target
+target
+
+# ensime
+project/ensime-plugin.sbt
+.ensime
+.ensime_cache
+*.*~
