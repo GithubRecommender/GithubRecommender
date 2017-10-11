@@ -104,9 +104,8 @@ fetchData token repoName' repoOwner = mapError <$> fetch
     variables = object [ "name" .= repoName', "owner" .= repoOwner ]
     fetch :: ClientResponse ViewRepositoryNode
     fetch     = runRequest token query
-    mapError (Left _)                                      = Left ServiceError
-    mapError (Right (GraphQLResponse (Just view) Nothing)) = Right (viewData view)
-    mapError (Right  x)                                    = Left (WithMessage (show x))
+    mapError (Left _)     = Left ServiceError
+    mapError (Right view) = Right (viewData view)
 
 viewData :: ViewRepositoryNode -> RepositoryData
 viewData view = RepositoryData

@@ -61,18 +61,27 @@ instance (FromJSON result) => FromJSON (GraphQLResponse result) where
 
 type GithubAPIV4 a = "graphql" :> WithUserAgent :> BearerTokenProtected :> ReqBody '[JSON] GraphQLRequest :> Post '[JSON] (GraphQLResponse a)
 
-data ClientError = FatalError ServantError deriving (Eq, Show)
-instance Exception ClientError
+data ClientError a    = FatalError ServantError -- ^ No response at all
+                      | ServerError Value       -- ^ Errors
+                      | MalformedResponse
+                      | PartialError Value a    -- ^ Parts of the response are not available due to resolution errors
+                      deriving (Eq, Show)
 
-type ClientResponse a = IO (Either ClientError (GraphQLResponse a))
+
+type ClientResponse a = IO (Either (ClientError a) a)
 
 runRequest :: (FromJSON result) => BearerToken -> GraphQLRequest -> ClientResponse result
 runRequest token graphqlRequest = do
   manager <- newManager tlsManagerSettings
-  mapError <$> runClientM request (ClientEnv manager baseUrl)
+  extractResponse <$> runClientM request (ClientEnv manager baseUrl)
   where
     request            = query (Just defaultUserAgent) authenticate graphqlRequest
     authenticate       = mkAuthenticateReq token authenticateWithBearerToken
     query              = client (Proxy :: Proxy (GithubAPIV4 result))
-    mapError (Left e)  = Left (FatalError e)
-    mapError (Right r) = Right r
+
+extractResponse :: (FromJSON result) => Either ServantError (GraphQLResponse result) -> Either (ClientError result) result
+extractResponse (Right (GraphQLResponse (Just data') Nothing))  = Right data'
+extractResponse (Right (GraphQLResponse (Just data') (Just e))) = Left (PartialError e data')
+extractResponse (Right (GraphQLResponse Nothing (Just e)))      = Left (ServerError e)
+extractResponse (Right (GraphQLResponse Nothing Nothing))       = Left MalformedResponse
+extractResponse (Left e)                                        = Left (FatalError e)

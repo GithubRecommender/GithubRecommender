@@ -25,8 +25,14 @@ library
                      , TestApplication
 
   build-depends:       aeson >= 1.1
+                     , aeson-lens
+                     , lens
                      , base >= 4.7 && < 5
                      , bytestring >= 0.10
+                     , persistent-sqlite
+                     , persistent
+                     , esqueleto
+                     , sqlite-simple
                      , containers >= 0.5
                      , unordered-containers >= 0.2
                      , http-client >= 0.5.7.0
