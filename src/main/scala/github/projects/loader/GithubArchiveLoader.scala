@@ -3,11 +3,11 @@ package github.projects.loader
 import github.projects.util.Slf4jLog
 import github.projects.data._
 
-import play.api.libs.json._
 import fs2.{Task, Chunk}
 import fs2.interop.cats._
 import org.http4s._
 import org.http4s.client._
+import io.circe.parser.decode
 
 import scala.io.Source
 import scala.language.higherKinds
@@ -20,9 +20,9 @@ trait GithubArchiveLoader[F[_]] extends {
   def load(year: Int, month: Int, day: Int, hour: Int, events: Set[String]): F[Iterator[Event]]
 }
 
-object ArchiveIOLoader {
+object GithubArchiveLoader {
 
-  def apply(client: Client) = new GithubArchiveLoader[Task] {
+  def io(client: Client) = new GithubArchiveLoader[Task] {
 
     private val log = Slf4jLog[Task]("github-archive-loader")
 
@@ -35,10 +35,10 @@ object ArchiveIOLoader {
           Source
             .fromInputStream(new GZIPInputStream(new ByteArrayInputStream(chunk.toArray))).getLines
             .flatMap { raw =>
-              Json.fromJson[Event](Json.parse(raw)) match {
-                case JsSuccess(event, _) => if (events(event.`type`)) Some(event) else None
-                case JsError(errors)     =>
-                  log.error(s"failed to parse event from archive: $url\n${errors.mkString("\n")}")
+              decode[Event](raw) match {
+                case Right(event) => if (events(event.`type`)) Some(event) else None
+                case Left(error) =>
+                  log.error(s"failed to parse event from archive: $url\n$error")
                   None
               }
             }            

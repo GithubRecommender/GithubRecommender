@@ -2,10 +2,16 @@ import sbt._
 
 object Dependencies {
 
+  val http4sVersion = "0.17.4"
+  val circeVersion  = "0.8.0"
+
   val root = Seq(
-    "org.scalaj" %% "scalaj-http" % "2.3.0"          % Compile,
-    "org.http4s" %% "http4s-blaze-client" % "0.17.4" % Compile, 
-    "com.typesafe.play" %% "play-json" % "2.6.2"     % Compile,
+    "org.http4s" %% "http4s-blaze-client" % http4sVersion % Compile,
+    "org.http4s" %% "http4s-dsl" % http4sVersion          % Compile,
+    "org.http4s" %% "http4s-circe" % http4sVersion        % Compile,
+    "io.circe" %% "circe-core" % circeVersion    % Compile,
+    "io.circe" %% "circe-parser" % circeVersion  % Compile,
+    "io.circe" %% "circe-generic" % circeVersion % Compile,
 
     "mysql" % "mysql-connector-java" % "6.0.6"     % Compile,
 
