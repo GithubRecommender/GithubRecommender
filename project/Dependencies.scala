@@ -12,6 +12,7 @@ object Dependencies {
     "io.circe" %% "circe-core" % circeVersion    % Compile,
     "io.circe" %% "circe-parser" % circeVersion  % Compile,
     "io.circe" %% "circe-generic" % circeVersion % Compile,
+    "org.tpolecat" %% "doobie-core-cats" % "0.4.4" % Compile,
     "eu.timepit" %% "refined" % "0.8.4" % Compile,
 
     "mysql" % "mysql-connector-java" % "6.0.6" % Compile,

@@ -3,8 +3,6 @@ package github.projects.data
 import io.circe._
 import io.circe.generic.JsonCodec
 
-@JsonCodec final case class Language(id: String, name: String)
-@JsonCodec final case class Topic(id: String, name: String, related: Option[Seq[Topic]])
 @JsonCodec final case class TopicWrapper(topic: Topic)
 
 final case class RepositoryInfo(id: String,
