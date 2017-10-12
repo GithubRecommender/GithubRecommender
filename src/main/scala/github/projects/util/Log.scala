@@ -1,14 +1,14 @@
 package github.projects.util
 
+import cats.Applicative
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.Future
 import scala.language.higherKinds
 
 trait Log[F[_]] {
 
-  def error(msg: => String): Unit
-  def error(msg: => String, cause: Throwable): Unit
+  def error(msg: => String): F[Unit]
+  def error(msg: => String, cause: Throwable): F[Unit]
 }
 
 object Log {
@@ -18,14 +18,14 @@ object Log {
 
 object Slf4jLog {
 
-  def init[A](name: String) = new Log[Future] {
+  def apply[F[_]: Applicative](name: String) = new Log[F] {
 
     private val log = LoggerFactory.getLogger(name)
 
-    def error(msg: => String): Unit =
-      log.error(msg)
+    def error(msg: => String): F[Unit] =
+      Applicative[F].pure(log.error(msg))
 
-    def error(msg: => String, cause: Throwable): Unit =
-      log.error(msg, cause)
+    def error(msg: => String, cause: Throwable): F[Unit] =
+      Applicative[F].pure(log.error(msg, cause))
   }
 }

@@ -5,6 +5,7 @@ import github.projects.data._
 
 import play.api.libs.json._
 import fs2.{Task, Chunk}
+import fs2.interop.cats._
 import org.http4s._
 import org.http4s.client._
 
@@ -21,9 +22,9 @@ trait GithubArchiveLoader[F[_]] extends {
 
 object ArchiveIOLoader {
 
-  def init(client: Client) = new GithubArchiveLoader[Task] {
+  def apply(client: Client) = new GithubArchiveLoader[Task] {
 
-    private val log = Slf4jLog.init("github-archive-loader")
+    private val log = Slf4jLog[Task]("github-archive-loader")
 
     def load(year: Int, month: Int, day: Int, hour: Int, events: Set[String]): Task[Iterator[Event]] = {
       val url = "http://data.githubarchive.org/%d-%02d-%02d-%02d.json.gz".format(year, month, day, hour)

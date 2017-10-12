@@ -6,12 +6,12 @@ import org.specs2.mutable.Specification
 
 final class ApiIOLoaderSpec extends Specification {
 
-  val token  = "e0f0c99533d347b3893b359e6e8242601a64b405"
+  val token  = System.getenv("GITHUB_API_TOKEN")
   val client = PooledHttp1Client()
 
   "load Github event archive" >> {
     "execute" >> {
-      ApiIOLoader.init(token, client).load("pheymann", "specdris").map(_.name).unsafeRun() === "specdris"
+      ApiIOLoader(token, client).load(QueryVariables("pheymann", "specdris")).map(_.map(_.name)).unsafeRun() === Right("specdris")
     }
 
     step {
