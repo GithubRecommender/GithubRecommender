@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
-module DataLoader.GithubAPI.TokenAuthentication
+module DataMining.DataSource.RepositoryData.GithubAPI.TokenAuthentication
   (
     BearerToken(..),
     BearerTokenProtected,

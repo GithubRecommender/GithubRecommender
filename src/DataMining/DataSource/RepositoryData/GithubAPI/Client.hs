@@ -3,8 +3,9 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TemplateHaskell #-}
 
-module DataLoader.GithubAPI.Client
+module DataMining.DataSource.RepositoryData.GithubAPI.Client
   (
      GraphQLRequest(..)
    , GraphQLResponse(..)
@@ -14,20 +15,20 @@ module DataLoader.GithubAPI.Client
   )
 where
 
+import Control.Exception
+import Control.Lens (makeLenses)
 import Data.Aeson
+import Data.ByteString (ByteString)
 import Data.Proxy
 import Data.Text (Text)
+import Data.Typeable
 import GHC.Generics
-
-import Control.Exception
-
 import Network.HTTP.Client (newManager, defaultManagerSettings)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Servant.API hiding (addHeader)
 import Servant.Client
-import Data.ByteString (ByteString)
 
-import DataLoader.GithubAPI.TokenAuthentication
+import DataMining.DataSource.RepositoryData.GithubAPI.TokenAuthentication
 
 baseUrl :: BaseUrl
 baseUrl = BaseUrl Https "api.github.com" 443 ""
@@ -38,23 +39,25 @@ defaultUserAgent = "servantclient/0.5"
 type WithUserAgent = (Header "User-Agent" String)
 
 data GraphQLRequest = GraphQLRequest  {
-    _query     :: Text
-  , _variables :: Maybe Value
-  , _operation :: Maybe Text
+    _requestQuery     :: Text
+  , _requestVariables :: Maybe Value
+  , _requestOperation :: Maybe Text
   } deriving (Eq, Show, Generic)
-
 
 instance ToJSON GraphQLRequest where
   toJSON request = object [
-      "query"         .= _query request
-    , "variables"     .= _variables request
-    , "operationName" .= _operation request
+      "query"         .= _requestQuery request
+    , "variables"     .= _requestVariables request
+    , "operationName" .= _requestOperation request
     ]
 
 data GraphQLResponse result = GraphQLResponse {
-  _data   :: Maybe result,
-  _errors :: Maybe Value
+  _reponseData   :: Maybe result,
+  _reponseErrors :: Maybe Value
   } deriving (Eq, Show, Generic)
+
+makeLenses ''GraphQLResponse
+makeLenses ''GraphQLRequest
 
 instance (FromJSON result) => FromJSON (GraphQLResponse result) where
   parseJSON (Object response) = GraphQLResponse
@@ -69,7 +72,9 @@ data ClientError a = FatalError ServantError -- ^ No response at all
                    | ServerError Value       -- ^ Errors
                    | MalformedResponse
                    | PartialError Value a    -- ^ Parts of the response are not available due to resolution errors
-                   deriving (Eq, Show)
+                   deriving (Eq, Show, Typeable)
+
+instance (Typeable a, Show a) => Exception (ClientError a)
 
 type ClientResponse a = IO (Either (ClientError a) a)
 

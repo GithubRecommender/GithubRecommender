@@ -1,23 +1,32 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
-module DataLoader.Services.RepositoryData.Default where
+module DataMining.DataSource.RepositoryData.DefaultDataSource
+  (
+      GithubRepositoryData(..)
+    , GithubDataResult
+    , fetchSingle
+  )
+where
+
 import Control.Lens hiding ((.=))
 import Data.Aeson
 import Data.Aeson.Lens
-import Data.Vector (Vector, toList)
-import Data.Text (Text, unpack)
 import Data.Maybe (maybeToList, fromMaybe)
+import Data.Text (Text, unpack)
+import Data.Vector (Vector, toList)
 import GHC.Generics
 import Text.Heredoc
 
-import DataLoader.GithubAPI.TokenAuthentication
-import DataLoader.GithubAPI.Client
-import DataLoader.Services.Types
-import DataLoader.Services.RepositoryData (RepositoryData(RepositoryData),
-                                           RepositoryLanguage(RepositoryLanguage),
-                                           RepositoryTopic(RepositoryTopic))
+import Internal.Types
+import DataMining.DataSource.Types
+import DataMining.DataSource.RepositoryData.Types
+import DataMining.DataSource.RepositoryData.GithubAPI.TokenAuthentication
+import DataMining.DataSource.RepositoryData.GithubAPI.Client
+
 dataQuery :: Text
 dataQuery = [str|
                 |fragment topicInfo on Topic {
@@ -56,28 +65,38 @@ dataQuery = [str|
                 |}
                 |]
 
-fetchData token repoName repoOwner = extractData <$> runQuery
+type BackendResult    = Either (ClientError Value) Value
+type GithubDataError  = DataSourceError (ClientError Value)
+type GithubDataResult = Either GithubDataError RepositoryData
+
+data GithubRepositoryData = GithubRepositoryData {
+  _token :: String
+  } deriving (Eq, Show)
+
+instance RepositoryDataSource GithubRepositoryData (ClientError Value) where
+  fetchSingle d ref = fetchDataFor authToken ref
+    where
+      authToken = BearerToken . _token $ d
+
+fetchDataFor :: BearerToken -> RepositoryReference -> IO GithubDataResult
+fetchDataFor token ref = extractData <$> runQuery
   where
     runQuery :: ClientResponse Value
-    runQuery = runRequest token (mkRequest repoName repoOwner)
+    runQuery = runRequest token (mkRequest ref)
 
-
-mkRequest :: Text -> Text -> GraphQLRequest
-mkRequest repoName repoOwner = GraphQLRequest dataQuery (Just variables) Nothing
+mkRequest :: RepositoryReference -> GraphQLRequest
+mkRequest ref = GraphQLRequest dataQuery (Just variables) Nothing
   where
-    variables = object ["name" .= repoName, "owner" .= repoOwner]
+    variables = object ["name" .= (_repositoryName ref), "owner" .= (_repositoryOwner ref)]
 
-mkId :: Text -> Id
-mkId = Id . unpack
-
-extractData :: Either (ClientError Value) Value -> Either ServiceError RepositoryData
-extractData (Left e)      = Left ServiceError
+extractData :: BackendResult -> GithubDataResult
+extractData (Left e)      = Left (BackendError e)
 extractData (Right value) = case result of
-                              Just v  -> Right v
-                              Nothing -> Left ServiceError
+                              Just r  -> Right r
+                              Nothing -> Left (GenericError "Couldn not extract RepoData from response")
   where
     repo field tpe = value ^? key "repository" . key field . tpe
-    repoId         = Id . unpack <$> (repo "repoId" _String)
+    repoId         = ID . unpack <$> (repo "repoId" _String)
     result         = RepositoryData            <$>
                      repoId                    <*>
                      (repo "repoName" _String) <*>
@@ -95,14 +114,14 @@ extractLanguages :: Maybe [Value] -> Maybe [RepositoryLanguage]
 extractLanguages v = (v >>= (sequence . map language)) `orElse` (Just [])
   where
     language v = RepositoryLanguage <$>
-                 (mkId <$> (v ^? key "languageId"._String)) <*>
+                 (ID . unpack <$> (v ^? key "languageId"._String)) <*>
                  v ^? key "languageName"._String
 
 extractTopics :: Maybe [Value] -> Maybe [RepositoryTopic]
 extractTopics v = (v >>= (sequence . map topic)) `orElse` (Just [])
   where
     topic v = RepositoryTopic <$>
-              (mkId <$> (v ^? key "topic" . key "topicId"._String)) <*>
+              (ID . unpack <$> (v ^? key "topic" . key "topicId"._String)) <*>
               (v ^? key "topic" . key "topicName"._String)          <*>
               extractTopics (toList <$> v ^? key "topic" . key "relatedTopics"._Array)
 

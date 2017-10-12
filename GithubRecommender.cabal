@@ -15,15 +15,24 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     DataLoader.GithubArchive
-                     , DataLoader.GithubAPI.TokenAuthentication
-                     , DataLoader.GithubAPI.Client
-                     , DataLoader.Services.Types
-                     , DataLoader.Services.RepositoryEvents
-                     , DataLoader.Services.RepositoryData
-                     , DataLoader.Services.RepositoryData.Default
-                     , DataLoader.Worker
+  exposed-modules:     Internal.Types
+                     , DataMining.DataSource.RepositoryData.DefaultDataSource
                      , TestApplication
+
+  other-modules:       DataMining.DataSource.Types
+                     , DataMining.DataSource.RepositoryData.GithubAPI.Client
+                     , DataMining.DataSource.RepositoryData.GithubAPI.TokenAuthentication
+                     , DataMining.DataSource.RepositoryData.Types
+
+  -- exposed-modules:     DataLoader.GithubArchive
+  --                    , DataLoader.GithubAPI.TokenAuthentication
+  --                    , DataLoader.GithubAPI.Client
+  --                    , DataLoader.Services.Types
+  --                    , DataLoader.Services.RepositoryEvents
+  --                    , DataLoader.Services.RepositoryData
+  --                    , DataLoader.Services.RepositoryData.Default
+  --                    , DataLoader.Worker
+  --                    , TestApplication
 
   build-depends:       aeson >= 1.1
                      , lens-aeson
