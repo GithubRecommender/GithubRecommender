@@ -12,13 +12,14 @@ object Dependencies {
     "io.circe" %% "circe-core" % circeVersion    % Compile,
     "io.circe" %% "circe-parser" % circeVersion  % Compile,
     "io.circe" %% "circe-generic" % circeVersion % Compile,
+    "eu.timepit" %% "refined" % "0.8.4" % Compile,
 
-    "mysql" % "mysql-connector-java" % "6.0.6"     % Compile,
+    "mysql" % "mysql-connector-java" % "6.0.6" % Compile,
 
     "ch.qos.logback" % "logback-classic" % "1.2.3" % Compile,
     "ch.qos.logback" % "logback-core" % "1.2.3"    % Compile,
     "org.slf4j" % "slf4j-api" % "1.7.25"           % Compile,
 
-    "org.specs2"  %% "specs2-core" % "3.9.4"     % "test;it"
+    "org.specs2"  %% "specs2-core" % "3.9.4" % "test;it"
   )
 }
