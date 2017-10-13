@@ -3,27 +3,25 @@
 module TestApplication (main) where
 
 import System.Environment
-import Data.Maybe (isJust)
+import Data.Maybe (isJust, fromJust)
 import Servant.Client
+import Data.Time (Day)
 
 import Internal.Types
 import qualified DataMining.DataSource.RepositoryData.DefaultDataSource as RepoData
+import qualified DataMining.DataSource.RepositoryEvents.DefaultDataSource as RepoEvent
+import DataMining.DataSource.RepositoryEvents.GithubArchive.Download (dayFromString)
 
 main :: IO ()
 main = do
-  -- let days = daysFrom "2017-10-10" 0
-  -- results <- downloadChunks (archiveNames [15] days)
-  -- mapM_ printResult results
-  -- pure ()
-  -- where
-  --   printResult (uri, Left e)  = putStrLn $ uri ++ " ... failed .." ++ showError e
-  --   printResult (uri, Right _) = putStrLn $ uri ++ " ... success"
-  --   showError FailureResponse{} = " Failure"
-  --   showError DecodeFailure{} = " DecoreFailure"
-  --   showError (UnsupportedContentType mt _) = " UnsupportedContentType: "  ++ show mt
-  --   showError InvalidContentTypeHeader{} = " InvalidContentTypeHeader"
-  --   showError ConnectionError{} = " ConnectionError"
-  repoData >>= print
+  event  <- fmap head $ head repoEvents
+  print event
+  pure ()
+
+
+repoEvents = do
+  let day = fromJust $ dayFromString "2017-10-10"
+  RepoEvent.eventStream (RepoEvent.GithubArchiveEventSource [day])
 
 
 repoData :: IO RepoData.GithubDataResult

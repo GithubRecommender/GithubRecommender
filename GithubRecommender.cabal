@@ -24,22 +24,16 @@ library
                      , DataMining.DataSource.RepositoryData.GithubAPI.TokenAuthentication
                      , DataMining.DataSource.RepositoryData.Types
 
-  -- exposed-modules:     DataLoader.GithubArchive
-  --                    , DataLoader.GithubAPI.TokenAuthentication
-  --                    , DataLoader.GithubAPI.Client
-  --                    , DataLoader.Services.Types
-  --                    , DataLoader.Services.RepositoryEvents
-  --                    , DataLoader.Services.RepositoryData
-  --                    , DataLoader.Services.RepositoryData.Default
-  --                    , DataLoader.Worker
-  --                    , TestApplication
+                     , DataMining.DataSource.RepositoryEvents.Types
+                     , DataMining.DataSource.RepositoryEvents.GithubArchive.Download
+                     , DataMining.DataSource.RepositoryEvents.DefaultDataSource
 
   build-depends:       aeson >= 1.1
+                     , directory >= 1.3
                      , lens-aeson
                      , lens
                      , base >= 4.7 && < 5
                      , bytestring >= 0.10
-                     , download
                      , persistent-sqlite
                      , persistent
                      , esqueleto

@@ -15,5 +15,4 @@ data RepositoryReference = RepositoryReference {
     , _repositoryName  :: Text
     } deriving (Eq, Show, Generic)
 
-
 makeLenses ''RepositoryReference
