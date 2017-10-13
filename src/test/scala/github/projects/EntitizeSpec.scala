@@ -2,7 +2,7 @@ package github.projects
 
 import github.projects.util.ParallelTraverse
 import github.projects.data._
-import github.projects.loader._
+import github.projects.reader._
 
 import cats.Id
 
@@ -52,11 +52,11 @@ final class EntitizeSpec extends Specification {
     }
   }
 
-  def testTopic(f: (Topic, Double) => TopicMatches) = new TopicEntityLoader[Id] {
-    def load(as: List[Topic], score: Double = 1.0): Id[List[TopicMatches]] = as.map(f(_, score))
+  def testTopic(f: (Topic, Double) => TopicMatches) = new TopicEntityReader[Id] {
+    def read(as: List[Topic], score: Double = 1.0): Id[List[TopicMatches]] = as.map(f(_, score))
   }
 
-  def testLanguage(f: (Language, Double) => LanguageMatches) = new LanguageEntityLoader[Id] {
-    def load(as: List[Language], score: Double = 1.0): Id[List[LanguageMatches]] = as.map(f(_, score))
+  def testLanguage(f: (Language, Double) => LanguageMatches) = new LanguageEntityReader[Id] {
+    def read(as: List[Language], score: Double = 1.0): Id[List[LanguageMatches]] = as.map(f(_, score))
   }
 }

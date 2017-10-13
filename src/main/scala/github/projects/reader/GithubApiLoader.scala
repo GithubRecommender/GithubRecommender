@@ -1,4 +1,4 @@
-package github.projects.loader
+package github.projects.reader
 
 import github.projects.data._
 
@@ -14,19 +14,19 @@ import scala.language.higherKinds
 @JsonCodec final case class QueryVariables(owner: String, name: String)
 @JsonCodec final case class QueryRequest(variables: QueryVariables, query: String)
 
-trait GithubApiLoader[F[_]] {
+trait GithubApiReader[F[_]] {
 
-  def load(variables: QueryVariables): F[Either[Throwable, RepositoryInfo]]
+  def read(variables: QueryVariables): F[Either[Throwable, RepositoryInfo]]
 }
 
-object GithubApiLoader {
+object GithubApiReader {
 
   import RepositoryInfo._
 
   final case class GithubApiException(owner: String, project: String, cause: Throwable)
       extends Exception(s"Github api query for $owner/$project failed", cause)
 
-  def io(token: String, client: Client) = new GithubApiLoader[Task] {
+  def io(token: String, client: Client) = new GithubApiReader[Task] {
 
     private val LangFirst  = 10
     private val TopicFirst = 50
@@ -70,7 +70,7 @@ object GithubApiLoader {
 
     private val uri = Uri.unsafeFromString("https://api.github.com/graphql")
 
-    def load(variables: QueryVariables): Task[Either[Throwable, RepositoryInfo]] = {
+    def read(variables: QueryVariables): Task[Either[Throwable, RepositoryInfo]] = {
       val request = Request(Method.POST, uri)
         .withHeaders(Headers(Header("Authorization", s"bearer $token")))
         .withBody(QueryRequest(variables, Query).asJson)

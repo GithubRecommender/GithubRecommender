@@ -7,9 +7,9 @@ import fs2.Task
 import fs2.interop.cats._
 import org.specs2.mutable.Specification
 
-final class EntityWriterIoSpec extends Specification {
+final class OntologyWriterIoSpec extends Specification {
 
-  "write new entities" >> {
+  "creates new entities" >> {
     "topics" >> {
       import TopicToEntity._
 

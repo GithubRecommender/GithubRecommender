@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS project (
   description VARCHAR(1000)
 );
 
-CREATE TABLE IF NOT EXISTS project_languages (
+CREATE TABLE IF NOT EXISTS entitized_project_languages (
   project_id  INT,
   language_id INT,
 
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS project_languages (
   CONSTRAINT fk_pl_language FOREIGN KEY (language_id) REFERENCES language_ontology (id) ON DELETE CASCADE
 );
 
-create TABLE IF NOT EXISTS project_topics (
+create TABLE IF NOT EXISTS entitized_project_topics (
   project_id INT,
   topic_id   INT,
 

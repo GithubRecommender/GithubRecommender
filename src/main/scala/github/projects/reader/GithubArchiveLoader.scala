@@ -1,4 +1,4 @@
-package github.projects.loader
+package github.projects.reader
 
 import github.projects.util.Slf4jLog
 import github.projects.data._
@@ -17,18 +17,18 @@ import java.time.format.DateTimeFormatter
 import java.io.ByteArrayInputStream
 import java.util.zip.GZIPInputStream
 
-trait GithubArchiveLoader[F[_]] extends {
+trait GithubArchiveReader[F[_]] extends {
 
-  def load(archiveDate: LocalDateTime): F[Iterator[Event]]
+  def read(archiveDate: LocalDateTime): F[Iterator[Event]]
 }
 
-object GithubArchiveLoader {
+object GithubArchiveReader {
 
-  def io(client: Client) = new GithubArchiveLoader[Task] {
+  def io(client: Client) = new GithubArchiveReader[Task] {
 
     private val log = Slf4jLog[Task]("github-archive-loader")
 
-    def load(archiveDate: LocalDateTime): Task[Iterator[Event]] = {
+    def read(archiveDate: LocalDateTime): Task[Iterator[Event]] = {
       val url = s"http://data.githubarchive.org/${archiveDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))}.json.gz"
 
       client

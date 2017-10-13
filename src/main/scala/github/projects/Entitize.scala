@@ -1,7 +1,7 @@
 package github.projects
 
 import github.projects.data._
-import github.projects.loader.{TopicEntityLoader, LanguageEntityLoader}
+import github.projects.reader.{TopicEntityReader, LanguageEntityReader}
 import github.projects.util.ParallelTraverse
 
 import cats.Monad
@@ -14,11 +14,11 @@ object Entitize {
 
   type TopicMatches = EntityMatches[Topic, TopicEntity]
 
-  def entitizeTopics[F[_]: Monad: ParallelTraverse: TopicEntityLoader](topics: List[Topic]): F[List[TopicMatches]] = {
+  def entitizeTopics[F[_]: Monad: ParallelTraverse: TopicEntityReader](topics: List[Topic]): F[List[TopicMatches]] = {
     def pure(entities: List[TopicMatches]) = Monad[F].pure(entities)
 
     def run(topics: List[Topic], score: Double, remaining: Int, acc: Builder[TopicMatches, List[TopicMatches]]): F[List[TopicMatches]] =
-      TopicEntityLoader[F].load(topics, score).flatMap { entitized =>
+      TopicEntityReader[F].read(topics, score).flatMap { entitized =>
         acc ++= entitized
 
         if (remaining == 0)
@@ -36,6 +36,6 @@ object Entitize {
 
   type LanguageMatches = EntityMatches[Language, LanguageEntity]
 
-  def entitizeLanguages[F[_]: LanguageEntityLoader](languages: List[Language]): F[List[LanguageMatches]] =
-    LanguageEntityLoader[F].load(languages, 1.0)
+  def entitizeLanguages[F[_]: LanguageEntityReader](languages: List[Language]): F[List[LanguageMatches]] =
+    LanguageEntityReader[F].read(languages, 1.0)
 }
