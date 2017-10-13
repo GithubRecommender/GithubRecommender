@@ -18,6 +18,3 @@ data RepositoryEvent = RepositoryEvent {
  } deriving (Eq, Show)
 
 makeLenses ''RepositoryEvent
-
-class (Exception e, Show e) => RepositoryEventSource s e where
-  fetchEvents :: s -> IO [(ArchiveName, (Either (DataSourceError e) RepositoryEvent))]

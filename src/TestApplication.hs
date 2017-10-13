@@ -26,7 +26,6 @@ repoEvents = do
   let day = fromJust $ dayFromString "2017-10-10"
   RepoEvent.eventStream (RepoEvent.GithubArchiveEventSource [day])
 
-
 repoData :: IO RepoData.GithubDataResult
 repoData = do
   service <- RepoData.GithubRepositoryData <$> getEnv "GITHUB_TOKEN"
