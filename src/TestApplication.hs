@@ -14,9 +14,12 @@ import DataMining.DataSource.RepositoryEvents.GithubArchive.Download (dayFromStr
 
 main :: IO ()
 main = do
-  event  <- fmap head $ head repoEvents
-  print event
+  firstEvent <- fmap (take 1) $ batch
+  print firstEvent
   pure ()
+ where
+   batch :: RepoEvent.GithubEventBatch
+   batch = head repoEvents
 
 
 repoEvents = do

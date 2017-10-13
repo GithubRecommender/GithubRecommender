@@ -38,6 +38,7 @@ library
                      , persistent
                      , esqueleto
                      , sqlite-simple
+                     , split
                      , containers >= 0.5
                      , unordered-containers >= 0.2
                      , http-client >= 0.5.7.0

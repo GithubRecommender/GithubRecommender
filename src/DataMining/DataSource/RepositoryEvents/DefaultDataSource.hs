@@ -11,12 +11,16 @@ module DataMining.DataSource.RepositoryEvents.DefaultDataSource
 where
 
 import Data.Text (Text)
+import qualified Data.Text as T
+import Control.Lens hiding ((.=))
 import Data.Aeson (decode, Value)
+import Data.Aeson.Lens
 import Data.Maybe (catMaybes)
 import qualified Data.ByteString.Lazy as BS
 import qualified Data.ByteString.Lazy.Char8 as C
 import Data.Time (Day)
 import System.Directory
+import Data.List.Split (splitOn)
 
 
 import Internal.Types
@@ -27,9 +31,6 @@ import DataMining.DataSource.RepositoryEvents.GithubArchive.Download
 data GithubArchiveEventSource = GithubArchiveEventSource {
   _days :: [Day]
   } deriving (Eq, Show)
-
-instance RepositoryEventSource GithubArchiveEventSource DownloadError where
-  fetchEvents = fetchEvents'
 
 type GithubEventBatch = IO [RepositoryEvent]
 
@@ -50,11 +51,16 @@ extractEvents' :: BS.ByteString -> [RepositoryEvent]
 extractEvents' input = eventsData
    where
      eventsData      = catMaybes (map decodeLine (C.lines input))
-     decodeLine line = dataFromValue <$> ((decode line) :: Maybe Value)
-     dataFromValue v = RepositoryEvent RepoChanged ref
-     ref             = RepositoryReference "foo" "bar"
+     decodeLine line = ((decode line) :: Maybe Value) >>= dataFromValue
+     dataFromValue v = RepositoryEvent <$> Just RepoChanged <*> (repoReferenceFromValue v)
 
-
+repoReferenceFromValue :: Value -> Maybe RepositoryReference
+repoReferenceFromValue v = repoEntry >>= referenceFromString
+  where
+    repoEntry             = v ^? key "repo" . key "name" . _String
+    referenceFromString s = case T.split (=='/') s of
+                              owner:repo:[] -> Just $ RepositoryReference owner repo
+                              _             -> Nothing
 
 defaultCacheDirectory = "/tmp"
 
@@ -93,31 +99,3 @@ readCached cacheFile = do
 
 cacheFilePath :: FilePath -> ArchiveName -> FilePath
 cacheFilePath cacheDirectory (ArchiveName name) = cacheDirectory ++ "/" ++ name ++ ".cache"
-
-fetchEvents' = undefined
-
--- fetchEvents' :: GithubArchiveEventSource -> IO GithubEventResult
--- fetchEvents' (GithubArchiveEventSource [])   = pure []
--- fetchEvents' (GithubArchiveEventSource days) = do
---   archives <- downloadArchives day
---   pure (archives >>= archiveEvents)
---   where
---     day = head days
-
--- extractEvents :: BS.ByteString -> [Either (DataSourceError DownloadError) RepositoryEvent]
--- extractEvents input = map extractData eventsData
---   where
---     eventsData :: [Either String Value]
---     eventsData                = map eitherDecode (C.lines input)
---     extractData (Left e)      = Left (GenericError e)
---     extractData (Right event) = Right $ dataFromValue event
---     dataFromValue v           = RepositoryEvent RepoChanged ref
---     ref                       = RepositoryReference "foo" "bar"
-
-
--- archiveEvents :: ArchiveDownload -> (ArchiveName, Either (DataSourceError DownloadError) [RepositoryEvent])
--- archiveEvents (SuccessfulDownload archiveName content) = (archiveName, ) <$> (extractEvents content)
--- archiveEvents (FailedDownload archiveName)             = (archiveName, Left (BackendError DownloadFailed))
-
--- downloadArchives :: ArchiveName -> IO [ArchiveDownload]
--- downloadArchives day = traverse downloadArchive (archivesOn day)
