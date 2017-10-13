@@ -8,25 +8,27 @@ import Servant.Client
 import Data.Time (Day)
 
 import Internal.Types
+
+import DataMining.DataSource.RepositoryEvents.Types
 import qualified DataMining.DataSource.RepositoryData.DefaultDataSource as RepoData
 import qualified DataMining.DataSource.RepositoryEvents.DefaultDataSource as RepoEvent
 import DataMining.DataSource.RepositoryEvents.GithubArchive.Download (dayFromString)
 
 main :: IO ()
 main = do
-  firstEvent <- fmap (take 1) $ batch
-  print firstEvent
+  events    <- fmap (take 1) $ batch
+  eventData <- traverse (repoData . _repoReference) events
+  print eventData
   pure ()
  where
    batch :: RepoEvent.GithubEventBatch
-   batch = head repoEvents
-
+   batch   = head repoEvents
 
 repoEvents = do
   let day = fromJust $ dayFromString "2017-10-10"
   RepoEvent.eventStream (RepoEvent.GithubArchiveEventSource [day])
 
-repoData :: IO RepoData.GithubDataResult
-repoData = do
+repoData :: RepositoryReference -> IO RepoData.GithubDataResult
+repoData reference = do
   service <- RepoData.GithubRepositoryData <$> getEnv "GITHUB_TOKEN"
-  RepoData.fetchSingle service (RepositoryReference "lampepfl" "dotty")
+  RepoData.fetchSingle service reference
