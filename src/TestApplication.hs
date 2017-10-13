@@ -6,6 +6,7 @@ import System.Environment
 import Data.Maybe (isJust, fromJust)
 import Servant.Client
 import Data.Time (Day)
+import Pipes
 
 import Internal.Types
 
@@ -14,6 +15,8 @@ import qualified DataMining.DataSource.RepositoryData.DefaultDataSource as RepoD
 import qualified DataMining.DataSource.RepositoryEvents.DefaultDataSource as RepoEvent
 import DataMining.DataSource.RepositoryEvents.GithubArchive.Download (dayFromString)
 
+-- TODO
+-- turn event and data streams into a (pipes) Producers/Consumers/Pipe
 main :: IO ()
 main = do
   events    <- fmap (take 1) $ batch
@@ -23,6 +26,9 @@ main = do
  where
    batch :: RepoEvent.GithubEventBatch
    batch   = head repoEvents
+
+repoEventsProducer :: Producer RepoEvent.GithubEventBatch IO [()]
+repoEventsProducer = traverse yield repoEvents
 
 repoEvents = do
   let day = fromJust $ dayFromString "2017-10-10"
