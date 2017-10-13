@@ -1,7 +1,7 @@
 package github.projects
 
 import github.projects.data._
-import github.projects.loader.EntityLoader
+import github.projects.loader.{TopicEntityLoader, LanguageEntityLoader}
 import github.projects.util.ParallelTraverse
 
 import cats.{Monad, Applicative}
@@ -16,16 +16,14 @@ object Entitize {
 
   type TopicMatches = EntityMatches[Topic, TopicEntity]
 
-  def topicEntities[F[_]: Monad: ParallelTraverse: EntityLoader](topics: List[Topic]): F[List[TopicMatches]] = {
-    import Topic._
-
+  def entitizeTopics[F[_]: Monad: ParallelTraverse: TopicEntityLoader](topics: List[Topic]): F[List[TopicMatches]] = {
     def pure(entities: List[TopicMatches]) = Monad[F].pure(entities)
 
     def q(names: NonEmptyList[String]) = fr"SELECT id, name FROM topic_ontology WHERE " ++ Fragments.in(fr"name", names)
 
     def run(topics: List[Topic], score: Double, remaining: Int, acc: Builder[TopicMatches, List[TopicMatches]]): F[List[TopicMatches]] =
       NonEmptyList.fromList(topics.map(_.name)).fold(pure(Nil)) { namesNel =>
-        EntityLoader[F].load(topics, q(namesNel).query[TopicEntity], score).flatMap { entitized =>
+        TopicEntityLoader[F].load(topics, q(namesNel).query[TopicEntity], score).flatMap { entitized =>
           acc ++= entitized
 
           if (remaining == 0)
@@ -44,13 +42,11 @@ object Entitize {
 
   type LanguageMatches = EntityMatches[Language, LanguageEntity]
 
-  def languageEntities[F[_]: Applicative :EntityLoader](languages: List[Language]): F[List[LanguageMatches]] = {
-    import Language._
-
+  def entitizeLanguages[F[_]: Applicative: LanguageEntityLoader](languages: List[Language]): F[List[LanguageMatches]] = {
     def q(names: NonEmptyList[String]) = fr"SELECT id, name FROM language_ontology WHERE " ++ Fragments.in(fr"name", names)
 
     NonEmptyList.fromList(languages.map(_.name)).fold(Applicative[F].pure(List.empty[LanguageMatches])) { namesNel =>
-      EntityLoader[F].load(languages, q(namesNel).query[LanguageEntity], 1.0)
+      LanguageEntityLoader[F].load(languages, q(namesNel).query[LanguageEntity], 1.0)
     }
   }
 }
