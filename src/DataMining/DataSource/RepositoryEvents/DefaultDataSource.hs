@@ -35,9 +35,9 @@ type GithubEventBatch = IO [RepositoryEvent]
 
 eventStream :: GithubArchiveEventSource -> [GithubEventBatch]
 eventStream (GithubArchiveEventSource [])   = [pure []]
-eventStream (GithubArchiveEventSource days) = extractEvents <$> (downloadArchivesForDay day)
+eventStream (GithubArchiveEventSource days) = foldMap getData days
   where
-    day = head days
+    getData day = extractEvents <$> (downloadArchivesForDay day)
 
 extractEvents :: IO ArchiveDownload -> IO [RepositoryEvent]
 extractEvents action = do
