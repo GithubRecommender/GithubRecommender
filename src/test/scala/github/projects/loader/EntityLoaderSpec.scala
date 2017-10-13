@@ -16,13 +16,13 @@ final class EntityLoaderSpec extends Specification {
       val deE = LanguageEntity(0L, de.name)
       val enE = LanguageEntity(1L, en.name)
 
-      def toMatch[E <: Entity](entity: E) = Seq(EntityMatch(entity, 0.0))
+      def toMatch[E <: Entity](entity: E) = List(EntityMatch(entity, 0.0))
 
-      EntityLoader.directMatch[Language, LanguageEntity](Nil, Nil, 0.0) === Map.empty
-      EntityLoader.directMatch(Seq(de), Seq(deE), 0.0) === Map(de -> toMatch(deE))
-      EntityLoader.directMatch(Seq(de, en), Seq(deE, enE), 0.0) === Map(de -> toMatch(deE), en -> toMatch(enE))
-      EntityLoader.directMatch(Seq(de, en), Seq(deE), 0.0) === Map(de -> toMatch(deE))
-      EntityLoader.directMatch(Seq(de, en), Nil, 0.0) === Map.empty
+      EntityLoader.directMatch[Language, LanguageEntity](Nil, Nil, 0.0) === List.empty
+      EntityLoader.directMatch(List(de), List(deE), 0.0) === List(Right(toMatch(deE)))
+      EntityLoader.directMatch(List(de, en), List(deE, enE), 0.0) === List(Right(toMatch(deE)), Right(toMatch(enE)))
+      EntityLoader.directMatch(List(de, en), List(deE), 0.0) === List(Right(toMatch(deE)), Left(en))
+      EntityLoader.directMatch(List(de, en), Nil, 0.0) === List(Left(de), Left(en))
     }
   }
 }

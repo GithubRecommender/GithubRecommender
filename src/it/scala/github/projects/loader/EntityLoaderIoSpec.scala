@@ -6,7 +6,7 @@ final class EntityLoaderIoSpec extends Specification {
 
   "entitize Entitites" >> {
     "for topics" >> {
-      ???
+      pending
     }
   }
 }

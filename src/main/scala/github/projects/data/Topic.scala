@@ -4,7 +4,7 @@ import github.projects.util.Labelled
 
 import io.circe.generic.JsonCodec
 
-@JsonCodec final case class Topic(id: String, name: String, related: Option[Seq[Topic]])
+@JsonCodec final case class Topic(id: String, name: String, related: Option[List[Topic]])
 
 final case class TopicEntity(id: Long, label: String) extends Entity
 
