@@ -5,7 +5,6 @@ import github.projects.data._
 import github.projects.loader._
 
 import cats.Id
-import doobie.imports._
 
 import org.specs2.mutable.Specification
 
@@ -54,10 +53,10 @@ final class EntitizeSpec extends Specification {
   }
 
   def testTopic(f: (Topic, Double) => TopicMatches) = new TopicEntityLoader[Id] {
-    def load(as: List[Topic], query: Query0[TopicEntity], score: Double = 1.0): Id[List[TopicMatches]] = as.map(f(_, score))
+    def load(as: List[Topic], score: Double = 1.0): Id[List[TopicMatches]] = as.map(f(_, score))
   }
 
   def testLanguage(f: (Language, Double) => LanguageMatches) = new LanguageEntityLoader[Id] {
-    def load(as: List[Language], query: Query0[LanguageEntity], score: Double = 1.0): Id[List[LanguageMatches]] = as.map(f(_, score))
+    def load(as: List[Language], score: Double = 1.0): Id[List[LanguageMatches]] = as.map(f(_, score))
   }
 }

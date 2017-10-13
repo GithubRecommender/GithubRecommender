@@ -1,13 +1,13 @@
-USE github_recommender;
+-- USE github_recommender;
 
 CREATE TABLE IF NOT EXISTS topic_ontology (
   id   INT          PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(100) NOT NULL
+  label VARCHAR(100) NOT NULL UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS language_ontology (
   id   INT          PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(100) NOT NULL
+  label VARCHAR(100) NOT NULL UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS project (

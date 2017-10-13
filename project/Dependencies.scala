@@ -4,6 +4,7 @@ object Dependencies {
 
   val http4sVersion = "0.17.4"
   val circeVersion  = "0.8.0"
+  val doobieVersion = "0.4.4"
 
   val root = Seq(
     "org.http4s" %% "http4s-blaze-client" % http4sVersion % Compile,
@@ -12,10 +13,12 @@ object Dependencies {
     "io.circe" %% "circe-core" % circeVersion    % Compile,
     "io.circe" %% "circe-parser" % circeVersion  % Compile,
     "io.circe" %% "circe-generic" % circeVersion % Compile,
-    "org.tpolecat" %% "doobie-core-cats" % "0.4.4" % Compile,
+    "org.tpolecat" %% "doobie-core-cats" % doobieVersion % Compile,
     "eu.timepit" %% "refined" % "0.8.4" % Compile,
 
     "mysql" % "mysql-connector-java" % "6.0.6" % Compile,
+
+    "org.tpolecat" %% "doobie-h2-cats" % doobieVersion % "it",
 
     "ch.qos.logback" % "logback-classic" % "1.2.3" % Compile,
     "ch.qos.logback" % "logback-core" % "1.2.3"    % Compile,
