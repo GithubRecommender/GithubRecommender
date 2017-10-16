@@ -40,6 +40,9 @@ object GithubApiReader {
           |query RepositoryInfo($$name: String!, $$owner: String!) {
           |  repository(name: $$name, owner: $$owner) {
           |    id
+          |    owner {
+          |      login
+          |    }
           |    name
           |    description
           |    isFork

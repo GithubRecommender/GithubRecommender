@@ -2,34 +2,44 @@ package github.projects.writer
 
 import github.projects.data._
 
-import doobie.h2.imports._
+import doobie.imports._
 import fs2.Task
 import fs2.interop.cats._
 import org.specs2.mutable.Specification
 
 final class OntologyWriterIoSpec extends Specification {
 
+  sequential
+
   "creates new entities" >> {
     "topics" >> {
       import TopicToEntity._
 
-      val result = for {
-        trans <- H2Transactor[Task]("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MySQL;INIT=RUNSCRIPT FROM 'src/sql/create_tables.sql'", "sa", "")
-        ins   <- TopicToEntity[Task](io(trans)).write(Topic("1", "a", None))
-      } yield ins
+      val (ins0, ins1) = (for {
+        trans <- MysqlTransactor()
+        ins0  <- TopicToEntity[Task](io(trans)).write(Topic("1", "a", None))
+        ins1  <- TopicToEntity[Task](io(trans)).write(Topic("1", "a", None))
+      } yield (ins0, ins1)).unsafeRun()
 
-      result.unsafeRun() === TopicEntity(1L, "a")
+      ins0.label === "a"
+      ins0.id === ins1.id
     }
 
     "languages" >> {
       import LanguageToEntity._
 
-      val result = for {
-        trans <- H2Transactor[Task]("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MySQL;INIT=RUNSCRIPT FROM 'src/sql/create_tables.sql'", "sa", "")
-        ins   <- LanguageToEntity[Task](io(trans)).write(Language("1", "a"))
-      } yield ins
+      val (ins0, ins1) = (for {
+        trans <- MysqlTransactor()
+        ins0  <- LanguageToEntity[Task](io(trans)).write(Language("1", "a"))
+        ins1  <- LanguageToEntity[Task](io(trans)).write(Language("1", "a"))
+      } yield (ins0, ins1)).unsafeRun()
 
-      result.unsafeRun() === LanguageEntity(1L, "a")
+      ins0.label === "a"
+      ins0.id === ins1.id
+    }
+
+    step {
+      MysqlTransactor().flatMap(trans => cleanDb().transact(trans)).unsafeRun()
     }
   }
 }

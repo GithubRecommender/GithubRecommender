@@ -7,6 +7,7 @@ import doobie.util.transactor.Transactor
 import fs2.Task
 import fs2.interop.cats._
 
+import scala.util.control.NonFatal
 import scala.language.higherKinds
 
 trait OntologyWriter[A, E <: Entity, F[_]] {
@@ -16,7 +17,7 @@ trait OntologyWriter[A, E <: Entity, F[_]] {
 
 trait TopicToEntity[F[_]] extends OntologyWriter[Topic, TopicEntity, F] {
 
-  def query(label: String) = sql"INSERT INTO topic_ontology (label) VALUES ($label)"
+  def query(label: String) = sql"INSERT IGNORE INTO topic_ontology (label) VALUES ($label)"
 }
 
 object TopicToEntity {
@@ -29,12 +30,18 @@ object TopicToEntity {
       .withUniqueGeneratedKeys[Long]("id")
       .map(id => TopicEntity(id, entity.name))
       .transact(trans)
+      .handleWith {
+        case NonFatal(_) =>
+          (for {
+            id <- sql"SELECT id FROM topic_ontology WHERE label = ${entity.name}".query[Long].unique
+          } yield TopicEntity(id, entity.name)).transact(trans)
+      }
   }
 }
 
 trait LanguageToEntity[F[_]] extends OntologyWriter[Language, LanguageEntity, F] {
 
-  def query(label: String) = sql"INSERT INTO language_ontology (label) VALUES ($label)"
+  def query(label: String) = sql"INSERT IGNORE INTO language_ontology (label) VALUES ($label)"
 }
 
 object LanguageToEntity {
@@ -47,5 +54,11 @@ object LanguageToEntity {
       .withUniqueGeneratedKeys[Long]("id")
       .map(id => LanguageEntity(id, entity.name))
       .transact(trans)
+      .handleWith {
+        case NonFatal(_) =>
+          (for {
+            id <- sql"SELECT id FROM language_ontology WHERE label = ${entity.name}".query[Long].unique
+          } yield LanguageEntity(id, entity.name)).transact(trans)
+      }
   }
 }
