@@ -24,6 +24,8 @@ trait GithubArchiveReader[F[_]] extends {
 
 object GithubArchiveReader {
 
+  @inline def apply[F[_]](implicit g: GithubArchiveReader[F]): GithubArchiveReader[F] = g
+
   def io(client: Client) = new GithubArchiveReader[Task] {
 
     private val log = Slf4jLog[Task]("github-archive-loader")

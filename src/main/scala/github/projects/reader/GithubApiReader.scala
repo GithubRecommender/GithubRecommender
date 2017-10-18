@@ -16,12 +16,14 @@ import scala.language.higherKinds
 
 trait GithubApiReader[F[_]] {
 
-  def read(variables: QueryVariables): F[Either[Throwable, RepositoryInfo]]
+  def read(variables: QueryVariables): F[RepositoryInfo]
 }
 
 object GithubApiReader {
 
   import RepositoryInfo._
+
+  @inline def apply[F[_]](implicit g: GithubApiReader[F]): GithubApiReader[F] = g
 
   final case class GithubApiException(owner: String, project: String, cause: Throwable)
       extends Exception(s"Github api query for $owner/$project failed", cause)
@@ -73,7 +75,7 @@ object GithubApiReader {
 
     private val uri = Uri.unsafeFromString("https://api.github.com/graphql")
 
-    def read(variables: QueryVariables): Task[Either[Throwable, RepositoryInfo]] = {
+    def read(variables: QueryVariables): Task[RepositoryInfo] = {
       val request = Request(Method.POST, uri)
         .withHeaders(Headers(Header("Authorization", s"bearer $token")))
         .withBody(QueryRequest(variables, Query).asJson)
@@ -82,8 +84,8 @@ object GithubApiReader {
         .expect[RepositoryInfo](request)(jsonOf)
         .attempt
         .map {
-          case r@Right(_)  => r
-          case Left(cause) => Left(GithubApiException(variables.owner, variables.name, cause))
+          case Right(v)    => v
+          case Left(cause) => throw GithubApiException(variables.owner, variables.name, cause)
         }
     }
   }
